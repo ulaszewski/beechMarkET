@@ -30,10 +30,12 @@ You can also use independatly install the following programs:
 
 [bcftools (>1.11)](https://github.com/samtools/bcftools)
 
-## **Pre-requisites** - the reference genome
 
 **Option #3**
+
 Dokcer image (in preparation)
+
+## **Pre-requisites** - the reference genome
 
 Download the  reference genome of _Fagus sylvatica_ from the [Thines Lab site](http://thines-lab.senckenberg.de/beechgenome/data.html) or from [NCBI Genome repository](https://www.ncbi.nlm.nih.gov/data-hub/genome/GCA_907173295.1/). If needed unzip the assembly and index it with the following command:
 ```
