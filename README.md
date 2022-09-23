@@ -45,7 +45,7 @@ You can also use independatly install the following programs:
 
 Step 1: Download the compressed and indexed reference genome of _Fagus sylvatica_ from here:
 Step 2: Uncompress the refrerence
-``
+```
 tar xvzf reference.tar.gz
 ```
 Step 2: Download the wraper from this repository
