@@ -32,6 +32,9 @@ You can also use independatly install the following programs:
 
 ## **Pre-requisites** - the reference genome
 
+**Option #3**
+Dokcer image (in preparation)
+
 Download the  reference genome of _Fagus sylvatica_ from the [Thines Lab site](http://thines-lab.senckenberg.de/beechgenome/data.html) or from [NCBI Genome repository](https://www.ncbi.nlm.nih.gov/data-hub/genome/GCA_907173295.1/). If needed unzip the assembly and index it with the following command:
 ```
 bwa index -a is **your_reference_name.fasta**
@@ -47,4 +50,10 @@ and
 ```
 cd beechMarkET
 chmod +x beechmarket
+```
+
+# Running the pipeline
+Follow the installation instructions, run the script as shown below and answer the prompt questions
+```
+./beechmarket
 ```
