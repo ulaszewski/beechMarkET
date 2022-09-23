@@ -11,7 +11,7 @@
 
 **Option #1** (recommended)
 
-If you use [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) you can install **beechMarkET** pre-requisites by running the following commands in your terminal:
+If you use [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) you can install **beechMarkET** pre-requisited programs by running the following commands in your terminal:
 ```
 conda config --add channels bioconda
 conda create --name beechmarket
@@ -34,19 +34,17 @@ You can also use independatly install the following programs:
 
 Download the  reference genome of _Fagus sylvatica_ from the [Thines Lab site](http://thines-lab.senckenberg.de/beechgenome/data.html) or from [NCBI Genome repository](https://www.ncbi.nlm.nih.gov/data-hub/genome/GCA_907173295.1/). If needed unzip the assembly and index it with the following command:
 ```
-bwa index -a is **your_reference.name.fasta**
+bwa index -a is **your_reference_name.fasta**
 ```
-
 
 ## Main wraper install
 
-Step 1: Download the compressed and indexed reference genome of _Fagus sylvatica_ from here:
-Step 2: Uncompress the refrerence
+Download the wraper from this repository by:
 ```
-tar xvzf reference.tar.gz
+git clone https://github.com/ulaszewski/beechMarkET.git
 ```
-Step 2: Download the wraper from this repository
-Step 3: Change the mode of the program
+and
 ```
+cd beechMarkET
 chmod +x beechmarket
 ```
