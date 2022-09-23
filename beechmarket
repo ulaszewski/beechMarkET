@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+#Input basic parameters
+
+echo -e "\nTo run the pipeline you will need to answer few questions, on three main topics\n"
+echo -e "\nSection #1 - Raw sequencing data\n"
+
+read -i "$in_dir" -p "Input PATH to raw READS directory (press ENTER when current): " input
+in_dir="${input:-.}"
+
+read -i "$ext" -p "Input file extension fq/fastq/fq.gz (for default fq.gz press ENTER): " input
+ext="${input:-fq.gz}"
+
+read -i "$fwd" -p "Input forward (R1) read naming convention (for default "fwd" press ENTER): " input
+fwd="${input:-fwd}"
+
+read -i "$rev" -p "Input reverse (R2) read naming convention (for default "rev" press ENTER): " input
+rev="${input:-rev}"
+
+echo -e "\nSection #2 - The reference genome\n"
+
+read -i "$ref_dir" -p "Input PATH to reference genome directory (press ENTER when current): " input
+ref_dir="${input:-.}"
+
+read -i "$ref" -p "Input NAME of your reference genome (for default "reference.fasta" press ENTER): " input
+ref="${input:-reference.fasta}"
+
+echo -e "\nSection #3 - Output and CPU usage\n"
+
+read -i "$out_dir" -p "Input path to output data directory (press ENTER when current): " input
+out_dir="${input:-.}"
+
+read -i "$cpu" -p "Input number of CPUs you want to use (for default "4" press ENTER): " input
+cpu="${input:-4}"
+
+#Prepare prefix list
+
+mkdir $out_dir 2>/dev/null
+
+#echo -e "\n*** Prepare prefix list *** \n"
+
+for input_file in $(find $in_dir -maxdepth 1  -name "*\\$fwd.\\$ext*"); do
+prefixes_file=$(basename ${input_file} | sed -r -e "s/.$fwd.$ext//g" | sort | uniq)
+echo $prefixes_file >> $out_dir/file_prefixes.txt
+done
+
+#Clean files with Trimmomatic
+
+mkdir $out_dir/clean_input 2>/dev/null
+mkdir $out_dir/trimm_log 2>/dev/null
+
+echo -e "\n*** Cleaning files with Trimmomatic ***\n"
+
+while read PREFIX; do
+trimmomatic PE $in_dir/${PREFIX}*$fwd*$ext $in_dir/${PREFIX}*$rev*$ext $out_dir/clean_input/${PREFIX}_paired_fwd.fq.gz $out_dir/clean_input/${PREFIX}_unpaired_fwd.fq.gz $out_dir/clean_input/${PREFIX}_paired_rev.fq.gz $out_dir/clean_input/${PREFIX}_unpaired_rev.fq.gz -threads $cpu  ILLUMINACLIP:./TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:75 AVGQUAL:25 2> $out_dir/trimm_log/${PREFIX}_trimm.log
+done < $out_dir/file_prefixes.txt
+
+#Map samples against reference genome/chromosome(s)
+mkdir $out_dir/bam_files 2>/dev/null
+
+echo -e  "\n*** Map samples against the reference genome***\n"
+
+while read PREFIX; do
+bwa mem -t $cpu -M $ref_dir/$ref $out_dir/clean_input/${PREFIX}_paired_fwd.fq.gz $out_dir/clean_input/${PREFIX}_paired_rev.fq.gz -v 0 | samtools fixmate -m - - | samtools view -@ $cpu -b -h - > $out_dir/bam_files/${PREFIX}.bam
+done < $out_dir/file_prefixes.txt
+
+while read PREFIX; do
+samtools sort $out_dir/bam_files/${PREFIX}.bam -o $out_dir/bam_files/${PREFIX}.sort.bam -@ $cpu
+done < $out_dir/file_prefixes.txt
+
+
+#Filter bam files and prepare them for maker calling
+
+echo -e "\n*** Filter *.bam file and prepare them for maker calling ***\n"
+
+while read PREFIX; do
+samtools view -@ $cpu -h -b -F 0x004,0x100 $out_dir/bam_files/${PREFIX}.sort.bam > $out_dir/bam_files/${PREFIX}.rm_unmap-sec.bam
+samtools markdup -r $out_dir/bam_files/${PREFIX}.rm_unmap-sec.bam $out_dir/bam_files/${PREFIX}.rm_unmap-sec.no_dup.bam
+samtools index  $out_dir/bam_files/${PREFIX}.rm_unmap-sec.no_dup.bam
+samtools stats $out_dir/bam_files/${PREFIX}.rm_unmap-sec.no_dup.bam > $out_dir/bam_files/${PREFIX}.rm_unmap-sec.no_dup.samstats
+done < $out_dir/file_prefixes.txt
+
+
+#Call markers and index files
+
+echo -e "\n*** Calling markers and indexing ***\n"
+
+ls $out_dir/bam_files/*.rm_unmap-sec.no_dup.bam > $out_dir/bam_files/mapping_results.txt
+
+mkdir $out_dir/results 2>/dev/null
+
+bcftools mpileup --bam-list $out_dir/bam_files/mapping_results.txt --min-MQ 20 --min-BQ 13 --annotate AD,DP,SP --output-type u --threads $cpu --fasta-ref reference.fasta | bcftools call --multiallelic-caller --annotate GQ,GP --ploidy 2 --output-type u | bcftools norm --check-ref w --fasta-ref reference.fasta --output-type b > $out_dir/results/all_markers_called.bcf
+bcftools index $out_dir/results/all_markers_called.bcf
+
+#Filter markers
+
+echo -e "\n** *Filtering markers ***\n"
+
+bcftools view -v snps $out_dir/results/all_markers_called.bcf | bcftools filter --threads $cpu -e 'QUAL <= 30 || F_MISSING > 0.5 || MAC <= 1 ||  MEAN(FMT/DP)<=15 && MEAN(FMT/DP)>70 ' -O u -o $out_dir/results/all_SNPs_filter_1.bcf
+bcftools filter --threads $cpu --set-GTs . -e 'FMT/DP < 6 | FMT/GQ < 20' $out_dir/results/all_SNPs_filter_1.bcf -O u -o $out_dir/results/all_SNPs_filter_2.bcf
+bcftools filter --threads $cpu -e 'F_MISSING > 0.25' $out_dir/results/all_SNPs_filter_2.bcf -O u -o $out_dir/results/all_SNPs_filter_3.bcf
+bcftools filter --threads $cpu -e 'MAF <= 0.025' $out_dir/results/all_SNPs_filter_3.bcf -O b -o $out_dir/results/all_SNPs_filter_4.bcf
+
+echo -e "\n***Done, thank you, bye!***\n"
+
+rm $out_dir/file_prefixes.txt
