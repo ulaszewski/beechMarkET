@@ -60,3 +60,7 @@ Follow the installation instructions, run the script as shown below and answer t
 ```
 ./beechmarket
 ```
+
+# Citation
+If you want to cite this pipeline as well as the reference please use this DOI: https://doi.org/10.3389/fgene.2021.691058 or directly:
+> Mishra, Bagdevi, et al. "A Chromosome-level genome assembly of the European Beech (Fagus sylvatica) reveals anomalies for organelle DNA integration, repeat Content and distribution of SNPs." Frontiers in genetics 12 (2021).
