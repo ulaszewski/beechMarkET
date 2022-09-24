@@ -60,6 +60,18 @@ Follow the installation instructions, run the script as shown below and answer t
 ```
 ./beechmarket
 ```
+# Output
+
+_beechMarkET_ provides the user with several output files:
+- clean fastq files
+- mapped, filtered and indexed bam files
+- raw and filtered maker files in *.bcf format
+
+Please be advised that the generated files will be heavily using the your SSD/HDD up to 10x of the initial size of the input raw reads file(s). Please consider this factor while planning your reasearch.
+
+# Co-contributors
+In alphabetic order: Stephen Knobloch, Bagdevi Mishra, Marco Thines, Bartosz Ulaszewski, Stefan Wötzel
+
 
 # Citation
 If you want to cite this pipeline as well as the reference please use this DOI: https://doi.org/10.3389/fgene.2021.691058 or directly:
