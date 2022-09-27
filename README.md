@@ -41,6 +41,7 @@ Dokcer image (in preparation)
 Download the  reference genome of _Fagus sylvatica_ from the [Thines Lab site](http://thines-lab.senckenberg.de/beechgenome/data.html) or from [NCBI Genome repository](https://www.ncbi.nlm.nih.gov/data-hub/genome/GCA_907173295.1/). If needed unzip the assembly and index it with the following command:
 ```
 bwa index -a is your_reference_name.fasta
+samtools faidx your_reference_name.fasta
 ```
 
 ## Main wraper install
