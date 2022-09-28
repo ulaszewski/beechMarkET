@@ -52,7 +52,7 @@ mkdir $out_dir/trimm_log 2>/dev/null
 echo -e "\n*** Cleaning files with Trimmomatic ***\n"
 
 while read PREFIX; do
-trimmomatic PE $in_dir/${PREFIX}*$fwd*$ext $in_dir/${PREFIX}*$rev*$ext $out_dir/clean_input/${PREFIX}_paired_fwd.fq.gz $out_dir/clean_input/${PREFIX}_unpaired_fwd.fq.gz $out_dir/clean_input/${PREFIX}_paired_rev.fq.gz $out_dir/clean_input/${PREFIX}_unpaired_rev.fq.gz -threads $cpu  ILLUMINACLIP:./TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:75 AVGQUAL:25 2> $out_dir/trimm_log/${PREFIX}_trimm.log
+trimmomatic PE $in_dir/${PREFIX}*$fwd*$ext $in_dir/${PREFIX}*$rev*$ext $out_dir/clean_input/${PREFIX}_paired_fwd.fq.gz $out_dir/clean_input/${PREFIX}_unpaired_fwd.fq.gz $out_dir/clean_input/${PREFIX}_paired_rev.fq.gz $out_dir/clean_input/${PREFIX}_unpaired_rev.fq.gz -threads $cpu  ILLUMINACLIP:./TruSeq3-PE-2.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:75 AVGQUAL:25 2> $out_dir/trimm_log/${PREFIX}_trimm.log
 done < $out_dir/file_prefixes.txt
 
 #Map samples against reference genome/chromosome(s)
@@ -89,7 +89,7 @@ ls $out_dir/bam_files/*.rm_unmap-sec.no_dup.bam > $out_dir/bam_files/mapping_res
 
 mkdir $out_dir/results 2>/dev/null
 
-bcftools mpileup --bam-list $out_dir/bam_files/mapping_results.txt --min-MQ 20 --min-BQ 13 --annotate AD,DP,SP --output-type u --threads $cpu --fasta-ref reference.fasta | bcftools call --multiallelic-caller --annotate GQ,GP --ploidy 2 --output-type u | bcftools norm --check-ref w --fasta-ref reference.fasta --output-type b > $out_dir/results/all_markers_called.bcf
+bcftools mpileup --bam-list $out_dir/bam_files/mapping_results.txt --min-MQ 20 --min-BQ 13 --annotate AD,DP,SP --output-type u --threads $cpu --fasta-ref $ref_dir/$ref | bcftools call --multiallelic-caller --annotate GQ,GP --ploidy 2 --output-type u | bcftools norm --check-ref w --fasta-ref $ref_dir/$ref --output-type b > $out_dir/results/all_markers_called.bcf
 bcftools index $out_dir/results/all_markers_called.bcf
 
 #Filter markers
