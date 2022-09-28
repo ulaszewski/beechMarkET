@@ -17,15 +17,15 @@ fwd="${input:-fwd}"
 read -i "$rev" -p "Input reverse (R2) read naming convention (for default "rev" press ENTER): " input
 rev="${input:-rev}"
 
-read -i "$adapter" -p "Input FULL path to Illumina adapter file (default ./adapters/TruSeq3-PE-2.fa press ENTER): " input
+read -i "$adapter" -p "Input FULL PATH to Illumina adapter file (default ./adapters/TruSeq3-PE-2.fa press ENTER): " input
 adapter="${input:-./adapters/TruSeq3-PE-2.fa}"
 
 echo -e "\nSection #2 - The reference genome\n"
 
-read -i "$ref_dir" -p "Input PATH to reference genome directory (press ENTER when current): " input
+read -i "$ref_dir" -p "Input PATH to REFERENCE genome directory (press ENTER when current): " input
 ref_dir="${input:-.}"
 
-read -i "$ref" -p "Input NAME of your reference genome (for default "reference.fasta" press ENTER): " input
+read -i "$ref" -p "Input NAME of your REFERENCE genome (for default "reference.fasta" press ENTER): " input
 ref="${input:-reference.fasta}"
 
 echo -e "\nSection #3 - Output and CPU usage\n"
