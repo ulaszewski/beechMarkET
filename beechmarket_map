@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+#Input basic parameters
+echo -e "\nThis part the pipeline you will map the the reads to the reference genome and filter output bamfiles\n"
+echo -e "\nSection #1 - Clean sequencing data\n"
+
+read -i "$in_dir" -p "Input PATH to clean READS directory (press ENTER when current): " input
+in_dir="${input:-.}"
+
+read -i "$fwd" -p "Input forward (R1) read naming convention (for default "fwd" press ENTER): " input
+fwd="${input:-fwd}"
+
+read -i "$rev" -p "Input reverse (R2) read naming convention (for default "rev" press ENTER): " input
+rev="${input:-rev}"
+
+read -i "$ext" -p "Input file extension fq/fastq/fq.gz (for default fq.gz press ENTER): " input
+ext="${input:-fq.gz}"
+
+echo -e "\nSection #2 - The reference genome\n"
+
+read -i "$ref_dir" -p "Input PATH to reference genome directory (press ENTER when current): " input
+ref_dir="${input:-.}"
+
+read -i "$ref" -p "Input NAME of your reference genome (for default "reference.fasta" press ENTER): " input
+ref="${input:-reference.fasta}"
+
+echo -e "\nSection #3 - Output and CPU usage\n"
+
+read -i "$out_dir" -p "Input path to output data directory (press ENTER when current): " input
+out_dir="${input:-.}"
+
+read -i "$cpu" -p "Input number of CPUs you want to use (for default "4" press ENTER): " input
+cpu="${input:-4}"
+
+#Prepare prefix list
+
+mkdir $out_dir 2>/dev/null
+
+#echo -e "\n*** Prepare prefix list *** \n"
+
+for input_file in $(find $in_dir -maxdepth 1  -name "*\\$fwd.\\$ext*"); do
+prefixes_file=$(basename ${input_file} | sed -r -e "s/.$fwd.$ext//g" | sort | uniq)
+echo $prefixes_file >> $out_dir/file_prefixes_temp.txt
+done
+
+sort $out_dir/file_prefixes_temp.txt > $out_dir/file_prefixes.txt
+rm $out_dir/file_prefixes_temp.txt
+
+#Map samples against reference genome/chromosome(s)
+mkdir $out_dir/bam_files 2>/dev/null
+
+echo -e  "\n*** Map samples against the reference genome***\n"
+
+while read PREFIX; do
+bwa mem -t $cpu -M $ref_dir/$ref $in_dir/${PREFIX}*$fwd*$ext $in_dir/${PREFIX}*$rev*$ext -v 0 | samtools fixmate -m - - | samtools view -@ $cpu -b -h - > $out_dir/${PREFIX}.bam
+done < $out_dir/file_prefixes.txt
+
+while read PREFIX; do
+samtools sort $out_dir/${PREFIX}.bam -o $out_dir/${PREFIX}.sort.bam -@ $cpu
+done < $out_dir/file_prefixes.txt
+
+
+#Filter bam files and prepare them for maker calling
+
+echo -e "\n*** Filter *.bam file and prepare them for maker calling ***\n"
+
+while read PREFIX; do
+samtools view -@ $cpu -h -b -F 0x004,0x100 $out_dir/${PREFIX}.sort.bam > $out_dir/${PREFIX}.rm_unmap-sec.bam
+samtools markdup -r $out_dir/${PREFIX}.rm_unmap-sec.bam $out_dir/${PREFIX}.rm_unmap-sec.no_dup.bam
+samtools index  $out_dir/${PREFIX}.rm_unmap-sec.no_dup.bam
+samtools stats $out_dir/${PREFIX}.rm_unmap-sec.no_dup.bam > $out_dir/${PREFIX}.rm_unmap-sec.no_dup.samstats
+done < $out_dir/file_prefixes.txt

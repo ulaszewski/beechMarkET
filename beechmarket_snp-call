@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+#Input basic parameters
+echo -e "\nThis part the pipeline you will map the the reads to the reference genome and filter output bamfiles\n"
+
+echo -e "\nSection #1 - Main parameters\n"
+
+read -i "$in_dir" -p "Input PATH to bam files (press ENTER when current): " input
+in_dir="${input:-.}"
+
+read -i "$out_dir" -p "Input path to output data directory (press ENTER when current): " input
+out_dir="${input:-.}"
+
+read -i "$cpu" -p "Input number of CPUs you want to use (for default "4" press ENTER): " input
+cpu="${input:-4}"
+
+echo -e "\nSection #2 - The reference genome\n"
+
+read -i "$ref_dir" -p "Input PATH to reference genome directory (press ENTER when current): " input
+ref_dir="${input:-.}"
+
+read -i "$ref" -p "Input NAME of your reference genome (for default "reference.fasta" press ENTER): " input
+ref="${input:-reference.fasta}"
+
+
+#Prepare bam files prefix list
+
+mkdir $out_dir 2>/dev/null
+
+#echo -e "\n*** Prepare prefix list *** \n"
+
+ls $in_dir/*.bam > $out_dir/mapping_results.txt
+
+#Call markers and index files
+
+echo -e "\n*** Calling markers and indexing ***\n"
+
+
+bcftools mpileup --bam-list $out_dir/mapping_results.txt --min-MQ 20 --min-BQ 13 --annotate AD,DP,SP --output-type u --threads $cpu --fasta-ref $ref_dir/$ref | bcftools call --multiallelic-caller --annotate GQ,GP --ploidy 2 --threads $cpu --output-type u | bcftools norm --check-ref w --fasta-ref $ref_dir/$ref --threads $cpu --output-type b > $out_dir/all_markers_called.bcf
+bcftools index $out_dir/all_markers_called.bcf
+
+#Filter markers
+
+echo -e "\n** *Filtering markers ***\n"
+
+bcftools view -v snps $out_dir/all_markers_called.bcf | bcftools filter --threads $cpu -e 'QUAL <= 30 || F_MISSING > 0.5 || MAC <= 1 ||  MEAN(FMT/DP)<=15 && MEAN(FMT/DP)>70 ' -O u -o $out_dir/all_SNPs_filter_1.bcf
+bcftools filter --threads $cpu --set-GTs . -e 'FMT/DP < 6 | FMT/GQ < 20' $out_dir/all_SNPs_filter_1.bcf -O u -o $out_dir/all_SNPs_filter_2.bcf
+bcftools filter --threads $cpu -e 'F_MISSING > 0.25' $out_dir/all_SNPs_filter_2.bcf -O u -o $out_dir/all_SNPs_filter_3.bcf
+bcftools filter --threads $cpu -e 'MAF <= 0.025' $out_dir/all_SNPs_filter_3.bcf -O b -o $out_dir/all_SNPs_filter_4.bcf
+
+echo -e "\n***Done, thank you, bye!***\n"

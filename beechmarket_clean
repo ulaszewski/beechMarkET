@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+#Input basic parameters
+echo -e "\nThis part of the pipeline will clean the raw sequencing data\n"
+echo -e "\nSection #1 - Raw sequencing data\n"
+
+read -i "$in_dir" -p "Input PATH to raw READS directory (press ENTER when current): " input
+in_dir="${input:-.}"
+
+read -i "$ext" -p "Input file extension fq/fastq/fq.gz (for default fq.gz press ENTER): " input
+ext="${input:-fq.gz}"
+
+read -i "$fwd" -p "Input forward (R1) read naming convention (for default "fwd" press ENTER): " input
+fwd="${input:-fwd}"
+
+read -i "$rev" -p "Input reverse (R2) read naming convention (for default "rev" press ENTER): " input
+rev="${input:-rev}"
+
+read -i "$adapter" -p "Input FULL path to Illumina adapter file (default ./adapters/TruSeq3-PE-2.fa press ENTER): " input
+adapter="${input:-./adapters/TruSeq3-PE-2.fa}"
+
+echo -e "\nSection #2 - Output and CPU usage\n"
+
+read -i "$out_dir" -p "Input path to output data directory (press ENTER when current): " input
+out_dir="${input:-.}"
+
+read -i "$cpu" -p "Input number of CPUs you want to use (for default "4" press ENTER): " input
+cpu="${input:-4}"
+
+#Prepare prefix list
+
+mkdir $out_dir 2>/dev/null
+
+#echo -e "\n*** Prepare prefix list *** \n"
+
+for input_file in $(find $in_dir -maxdepth 1  -name "*\\$fwd.\\$ext*"); do
+prefixes_file=$(basename ${input_file} | sed -r -e "s/.$fwd.$ext//g" | sort | uniq)
+echo $prefixes_file >> $out_dir/file_prefixes_temp.txt
+done
+
+sort $out_dir/file_prefixes_temp.txt > $out_dir/file_prefixes.txt
+rm $out_dir/file_prefixes_temp.txt
+
+#Clean files with Trimmomatic
+
+mkdir $out_dir/trimm_log 2>/dev/null
+
+echo -e "\n*** Cleaning files with Trimmomatic ***\n"
+
+while read PREFIX; do
+trimmomatic PE $in_dir/${PREFIX}*$fwd*$ext $in_dir/${PREFIX}*$rev*$ext $out_dir/${PREFIX}_paired_fwd.fq.gz $out_dir/${PREFIX}_unpaired_fwd.fq.gz $out_dir/${PREFIX}_paired_rev.fq.gz $out_dir/${PREFIX}_unpaired_rev.fq.gz -threads $cpu  ILLUMINACLIP:$adapter:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:75 AVGQUAL:25 2> $out_dir/trimm_log/${PREFIX}_trimm.log
+done < $out_dir/file_prefixes.txt
+
+echo -e "\n*** Thank you, bye! ***\n"
