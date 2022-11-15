@@ -2,6 +2,7 @@
 
 #Input basic parameters
 
+echo -e "\nWelcome to beechMarkET tool designed for analyzing common beech (Fagus sylvatica L.) sequencing data. The main module will guide you through the process of data cleaning, mapping, calling, and filtering of SNPs. If you want to use a certain part of the pipeline please use the modules available on this GitHub repository.\n"
 echo -e "\nTo run the pipeline you will need to answer few questions, on three main topics\n"
 echo -e "\nSection #1 - Raw sequencing data\n"
 
