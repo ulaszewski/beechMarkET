@@ -44,8 +44,11 @@ mkdir $out_dir 2>/dev/null
 
 for input_file in $(find $in_dir -maxdepth 1  -name "*\\$fwd.\\$ext*"); do
 prefixes_file=$(basename ${input_file} | sed -r -e "s/.$fwd.$ext//g" | sort | uniq)
-echo $prefixes_file >> $out_dir/file_prefixes.txt
+echo $prefixes_file >> $out_dir/file_prefixes_temp.txt
 done
+
+sort $out_dir/file_prefixes_temp.txt > $out_dir/file_prefixes.txt
+rm $out_dir/file_prefixes_temp.txt
 
 #Clean files with Trimmomatic
 
@@ -105,5 +108,3 @@ bcftools filter --threads $cpu -e 'F_MISSING > 0.25' $out_dir/results/all_SNPs_f
 bcftools filter --threads $cpu -e 'MAF <= 0.025' $out_dir/results/all_SNPs_filter_3.bcf -O b -o $out_dir/results/all_SNPs_filter_4.bcf
 
 echo -e "\n***Done, thank you, bye!***\n"
-
-rm $out_dir/file_prefixes.txt
