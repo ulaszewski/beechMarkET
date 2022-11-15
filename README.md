@@ -60,7 +60,9 @@ chmod +x beechmarket*
 Follow the installation instructions, run the script as shown below and answer the prompt questions
 ```
 ./beechmarket
+```
 OR
+```
 ./beechmarket_module-name
 ```
 # Output
