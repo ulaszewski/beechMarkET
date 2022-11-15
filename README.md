@@ -53,13 +53,15 @@ git clone https://github.com/ulaszewski/beechMarkET.git
 and
 ```
 cd beechMarkET
-chmod +x beechmarket
+chmod +x beechmarket*
 ```
 
-# Running the pipeline
+# Running the pipeline or modules
 Follow the installation instructions, run the script as shown below and answer the prompt questions
 ```
 ./beechmarket
+OR
+./beechmarket_module-name
 ```
 # Output
 
